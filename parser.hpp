@@ -4,6 +4,7 @@
 //
 // Parser for settings file
 //
+// Author (k-evolution): Farbod Hassani (Université de Genève & Universitetet i Oslo)
 // Author: Julian Adamek (Université de Genève & Observatoire de Paris & Queen Mary University of London)
 //
 // Last modified: April 2019
@@ -12,7 +13,6 @@
 
 #ifndef PARSER_HEADER
 #define PARSER_HEADER
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -660,10 +660,10 @@ bool parseFieldSpecifiers(parameter * & params, const int numparam, const char *
           //Kessence part
 				else if (strcmp(item, "phi_prime") == 0 || strcmp(item, "Phi_prime") == 0)
 						pvalue |= MASK_PHI_PRIME;
-				else if (strcmp(item, "pi_k") == 0 || strcmp(item, "Pi_k") == 0)
+				else if (strcmp(item, "Pi_k") == 0 || strcmp(item, "pi_k") == 0)
 					pvalue |= MASK_PI_K;
-				else if (strcmp(item, "zeta") == 0 || strcmp(item, "zeta") == 0)
-					pvalue |= MASK_zeta;
+				else if (strcmp(item, "Zeta") == 0 || strcmp(item, "zeta") == 0)
+					pvalue |= MASK_ZETA;
           //Kessence end
 				else if (strcmp(item, "Chi") == 0 || strcmp(item, "chi") == 0)
 					pvalue |= MASK_CHI;
@@ -696,14 +696,12 @@ bool parseFieldSpecifiers(parameter * & params, const int numparam, const char *
 				else if (strcmp(item, "v") == 0 || strcmp(item, "velocity") == 0)
 					pvalue |= MASK_VEL;
           //kessence part
-				else if (strcmp(item, "T_Kess") == 0 || strcmp(item, "T_Kessence") == 0)
+				else if (strcmp(item, "T00_kess") == 0 || strcmp(item, "T00_Kess") == 0)
 					pvalue |= MASK_T_KESS;
-
-				else if (strcmp(item, "Delta_Kess") == 0 || strcmp(item, "delta_Kessence") == 0)
-					pvalue |= MASK_Delta_KESS;
-        else if (strcmp(item, "Cross_dkess_dm") == 0 || strcmp(item, "Cross_dkess_dmatter") == 0)
+				else if (strcmp(item, "delta_kess") == 0 || strcmp(item, "Delta_kess") == 0)
+					pvalue |= MASK_DELTA_KESS;
+        else if (strcmp(item, "Cross_dkess_dm") == 0 || strcmp(item, "cross_dkess_dm") == 0)
           pvalue |= MASK_DELTAKESS_DELTA;
-
 					//Kessence end
 				start = comma+1;
 				while (*start == ' ' || *start == '\t') start++;
@@ -716,8 +714,8 @@ bool parseFieldSpecifiers(parameter * & params, const int numparam, const char *
 				pvalue |= MASK_PHI_PRIME;
 			else if (strcmp(start, "Pi_k") == 0 || strcmp(start, "pi_k") == 0)
 				pvalue |= MASK_PI_K;
-			else if (strcmp(start, "zeta") == 0 || strcmp(start, "zeta") == 0)
-				pvalue |= MASK_zeta;
+			else if (strcmp(start, "Zeta") == 0 || strcmp(start, "zeta") == 0)
+				pvalue |= MASK_ZETA;
         //Kessence end
 			else if (strcmp(start, "Chi") == 0 || strcmp(start, "chi") == 0)
 				pvalue |= MASK_CHI;
@@ -748,7 +746,13 @@ bool parseFieldSpecifiers(parameter * & params, const int numparam, const char *
 			else if (strcmp(start, "delta_N") == 0 || strcmp(start, "deltaN") == 0)
 				pvalue |= MASK_DBARE;
 			else if (strcmp(start, "v") == 0 || strcmp(start, "velocity") == 0)
-					pvalue |= MASK_VEL;
+				pvalue |= MASK_VEL;
+      else if (strcmp(start, "T00_kess") == 0 || strcmp(start, "T00_Kess") == 0)
+        pvalue |= MASK_T_KESS;
+      else if (strcmp(start, "delta_kess") == 0 || strcmp(start, "Delta_kess") == 0)
+        pvalue |= MASK_DELTA_KESS;
+      else if (strcmp(start, "Cross_dkess_dm") == 0 || strcmp(start, "cross_dkess_dm") == 0)
+        pvalue |= MASK_DELTAKESS_DELTA;
 
 			params[i].used = true;
 			return true;
@@ -819,8 +823,11 @@ int parseMetadata(parameter * & params, const int numparam, metadata & sim, cosm
   {
     if (par_string[0] == 'f' || par_string[0] == 'F')
       ic.IC_kess = 1;
+    else if (par_string[0] == 'h' || par_string[0] == 'H')
+      ic.IC_kess = 2;
+    else if(par_string[0] == 'c' || par_string[0] == 'C')
+      ic.IC_kess = 0;
   }
-
 
 	if (parseParameter(params, numparam, "IC generator", par_string))
 	{
@@ -893,14 +900,39 @@ if (ic.IC_kess == 1)
       parallel.abortForce();
 #endif
   }
+  #if defined(HAVE_CLASS) || defined(HAVE_HICLASS) || defined(HAVE_HICLASS_BG)
+  if(parallel.isRoot())  cout << " \033[1;31merror:\033[0m"  << "\033[1;35m The code is compiled with the CLASS/hiclass interface while in the settings it is requested to run the code using IC generator = file!\033[0m" <<endl;
+  parallel.abortForce();
+  #endif
 }
+if (ic.IC_kess == 1 || ic.tkfile[0] != '\0' || ic.pkfile[0] != '\0')
+{
+  #if defined(HAVE_CLASS) || defined(HAVE_HICLASS) || defined(HAVE_HICLASS_BG)
+  if(parallel.isRoot())  cout << " \033[1;31merror:\033[0m"  << "\033[1;35m The code is compiled with the CLASS/hiclass interface while in the settings it is requested to run the code using IC generator (kessence) = file!\033[0m" <<endl;
+  parallel.abortForce();
+  #endif
+}
+
   if (ic.IC_kess == 0)
 {
   COUT << " initial conditions for kessence fields (pi,zeta) will be computed using CLASS" << endl;
+  #ifndef HAVE_CLASS
+  if(parallel.isRoot())  cout << " \033[1;31merror:\033[0m"  << "\033[1;35m CLASS interface requested while the code has been compiled without it!\033[0m" <<endl;
+  #ifdef LATFIELD2_HPP
+  parallel.abortForce();
+  #endif
+  #endif
 }
-
-// if (!parseParameter(params, numparam, "T_kessence file", ic.tk_kessence) && ic.generator != ICGEN_READ_FROM_DISK);
-//kessence end
+if (ic.IC_kess == 2)
+{
+COUT << " initial conditions for kessence fields (pi,zeta) will be computed using hiclass" << endl;
+#ifndef HAVE_HICLASS
+if(parallel.isRoot())  cout << " \033[1;31merror:\033[0m"  << "\033[1;35m HICLASS interface requested while the code has been compiled without it!\033[0m" <<endl;
+#ifdef LATFIELD2_HPP
+      parallel.abortForce();
+#endif
+#endif
+}
 
 
 #ifdef ICGEN_FALCONIC
@@ -914,8 +946,10 @@ if (ic.IC_kess == 1)
 		)
 #endif
 	{
-#ifdef HAVE_CLASS
+#if defined(HAVE_CLASS)
 		COUT << " initial transfer functions will be computed by calling CLASS" << endl;
+#elif  defined(HAVE_HICLASS)
+		COUT << " initial transfer functions will be computed by calling hiCLASS" << endl;
 #else
 		COUT << COLORTEXT_RED << " error" << COLORTEXT_RESET << ": no power spectrum file nor transfer function file specified!" << endl;
 #ifdef LATFIELD2_HPP
@@ -1034,7 +1068,7 @@ if (ic.IC_kess == 1)
 			sim.radiation_flag = 0;
 			COUT << " radiation treatment set to: " << COLORTEXT_CYAN << "background" << COLORTEXT_RESET << endl;
 		}
-#ifdef HAVE_CLASS
+  #if defined(HAVE_CLASS)
 		else if (par_string[0] == 'c' || par_string[0] == 'C')
 		{
 			sim.radiation_flag = 1;
@@ -1055,6 +1089,10 @@ if (ic.IC_kess == 1)
 #ifdef LATFIELD2_HPP
 			parallel.abortForce();
 #endif
+#if defined(HAVE_HICLASS)
+if(parallel.isRoot())  cout << " \033[1;31merror:\033[0m"<< " \033[1;31merror: radiation treat-ment using hiclass interface is not supported!\033[0m" << endl;
+parallel.abortForce();
+#endif
 		}
 #else
 		else
@@ -1074,7 +1112,7 @@ if (ic.IC_kess == 1)
 			sim.fluid_flag = 0;
 			COUT << " fluid treatment set to: " << COLORTEXT_CYAN << "background" << COLORTEXT_RESET << endl;
 		}
-#ifdef HAVE_CLASS
+  #if defined(HAVE_CLASS)
 		else if (par_string[0] == 'c' || par_string[0] == 'C')
 		{
 			sim.fluid_flag = 1;
@@ -1102,6 +1140,10 @@ if (ic.IC_kess == 1)
 			sim.fluid_flag = 0;
 			COUT << COLORTEXT_YELLOW << " /!\\ warning" << COLORTEXT_RESET << ": CLASS is not available, setting fluid treatment = background" << endl;
 		}
+#endif
+#if defined(HAVE_HICLASS)
+if(parallel.isRoot())  cout << " \033[1;31merror:\033[0m"<< " \033[1;31merror: fluid treat-ment using hiclass interface is not tested!\033[0m" << endl;
+parallel.abortForce();
 #endif
 	}
 	else
@@ -1673,18 +1715,167 @@ if (ic.IC_kess == 1)
 		cosmo.h = P_HUBBLE;
 	}
 	// K-essence  paramteres
+    #if defined(HAVE_HICLASS) || defined(HAVE_HICLASS_BG)
+    if (parseParameter(params, numparam, "gravity_model", par_string))
+    {
+       if (par_string[0] == 'k' || par_string[0] == 'K')
+      {
+        COUT << " modified gravity model set to: " << COLORTEXT_CYAN << "k_essence_power" << COLORTEXT_RESET << endl;
+        cosmo.gravity_model = 1; // One needs to provide Xt, g0, g2, g4, phi_i, X_i
+      }
+      else if (par_string[0] == 'P' || par_string[0] == 'p')
+     {
+       COUT << " modified gravity model set to: " << COLORTEXT_CYAN << "propto_omega" << COLORTEXT_RESET << endl;
+       cosmo.gravity_model = 0; // One needs to provide c_s^2, w_kess and Omega_kess
+     }
+    }
+     else
+     {
+       if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify modified gravity model!  \033[0m"<< endl;
+       parallel.abortForce();
+     }
+    if (cosmo.gravity_model == 0)
+    {
+      if (!parseParameter(params, numparam, "cs2_kessence",  cosmo.cs2_kessence))
+    	{
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify the speed of sound!  \033[0m"<< endl;
+        parallel.abortForce();
+    	}
+      // k-essence
+      if (parseParameter(params, numparam, "omega_kessence", cosmo.Omega_kessence) || parseParameter(params, numparam, "Omega_kessence", cosmo.Omega_kessence))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You cannot specify Omega_kessence in the code! It's being obtained through the closed relation! \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      // Lambda
+      if (parseParameter(params, numparam, "omega_Lambda", cosmo.Omega_Lambda))
+      {
+      	cosmo.Omega_Lambda /= cosmo.h * cosmo.h;
+      }
+      else if (!parseParameter(params, numparam, "Omega_Lambda", cosmo.Omega_Lambda))
+      {
+      	cosmo.Omega_Lambda = 0.;
+      }
+
+      if (!parseParameter(params, numparam, "w_kessence",  cosmo.w_kessence))
+    	{
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify w_kess!  \033[0m"<< endl;
+        parallel.abortForce();
+    	}
+      if (!parseParameter(params, numparam, "w_a_kessence",  cosmo.w_a_kessence))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify w_a_kessence parameter!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      // ERROR:
+      if (parseParameter(params, numparam, "Xt",  cosmo.Xt))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You have specified Xt while modified gravity model set to propto_omega !  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      if (parseParameter(params, numparam, "g0",  cosmo.g0))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You have specified g0 while modified gravity model set to propto_omega !  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      if (parseParameter(params, numparam, "g2",  cosmo.g2))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You have specified g2 while modified gravity model set to propto_omega !  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+    }
+    else if (cosmo.gravity_model == 1)
+    {
+      if (!parseParameter(params, numparam, "Xt",  cosmo.Xt))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify Xt!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      if (!parseParameter(params, numparam, "g0",  cosmo.g0))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify g0!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      if (!parseParameter(params, numparam, "g2",  cosmo.g2))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify g2!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      if (!parseParameter(params, numparam, "g4",  cosmo.g4))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify g4!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      if (!parseParameter(params, numparam, "phi_i",  cosmo.phi_i))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify phi_i!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      if (!parseParameter(params, numparam, "X_i",  cosmo.X_i))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify X_i!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      // ERRORS:
+      if (parseParameter(params, numparam, "cs2_kessence",  cosmo.cs2_kessence))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You requested k_essence_power while specified cs2_kessence!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      if (parseParameter(params, numparam, "Omega_kessence",  cosmo.Omega_kessence) || parseParameter(params, numparam, "omega_kessence",  cosmo.Omega_kessence))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You requested k_essence_power while specified Omega_kess!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+
+      if (parseParameter(params, numparam, "w_kessence",  cosmo.w_kessence))
+      {
+        if(parallel.isRoot())  cout << " \033[1;31m ERROR: You requested k_essence_power while specified w_kess!  \033[0m"<< endl;
+        parallel.abortForce();
+      }
+      //
+    }
+  #else
+  // If hiclass is not requested!
 	if (!parseParameter(params, numparam, "cs2_kessence",  cosmo.cs2_kessence))
 	{
-			cosmo.cs2_kessence=1;
+    if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify the speed of sound!  \033[0m"<< endl;
+    parallel.abortForce();
 	}
-	if (!parseParameter(params, numparam, "Omega_kessence",  cosmo.Omega_kessence))
-	{
-			cosmo.Omega_kessence=0.7199;
-	}
+	// if (!parseParameter(params, numparam, "Omega_kessence",  cosmo.Omega_kessence))
+	// {
+  //   if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify Omega_kess!  \033[0m"<< endl;
+  //   parallel.abortForce();
+  // }
+  // k-essence
+
+  if (parseParameter(params, numparam, "omega_kessence", cosmo.Omega_kessence) || parseParameter(params, numparam, "Omega_kessence", cosmo.Omega_kessence))
+  {
+    if(parallel.isRoot())  cout << " \033[1;31m ERROR: You cannot specify Omega_kessence in the code! It's being obtained through the closed relation! \033[0m"<< endl;
+    parallel.abortForce();
+  }
+  // Lambda
+  if (parseParameter(params, numparam, "omega_Lambda", cosmo.Omega_Lambda))
+  {
+    cosmo.Omega_Lambda /= cosmo.h * cosmo.h;
+  }
+  else if (!parseParameter(params, numparam, "Omega_Lambda", cosmo.Omega_Lambda))
+  {
+    cosmo.Omega_Lambda = 0.;
+  }
+
 	if (!parseParameter(params, numparam, "w_kessence",  cosmo.w_kessence))
 	{
-			cosmo.w_kessence=-0.9;
-	}
+    if(parallel.isRoot())  cout << " \033[1;31m ERROR: You need to specify w_kess!  \033[0m"<< endl;
+    parallel.abortForce();
+  }
+  if (parseParameter(params, numparam, "w_a_kessence",  cosmo.w_a_kessence))
+  {
+    if(parallel.isRoot())  cout << " \033[1;31m ERROR: You requested w_a (time variation of w) which is not implemented properly! You need to use hiclass tools with background option for it.  \033[0m"<< endl;
+    parallel.abortForce();
+  }
+  #endif
+
   if (!parseParameter(params, numparam, "nKe_numsteps",  sim.nKe_numsteps))
   {
     sim.nKe_numsteps = 1;
@@ -1697,6 +1888,38 @@ if (ic.IC_kess == 1)
   {
     sim.NL_kessence = 0; //Default is linear kessence.
   }
+  if (!parseParameter(params, numparam, "background hiclass", sim.bg_hiclass))
+  {
+    sim.bg_hiclass = 0; //Default is constant parameters and using the default k-evolution version!
+  }
+
+  #if defined(HAVE_HICLASS) && defined(HAVE_HICLASS_BG)
+      if (sim.bg_hiclass==1)
+      {
+        if(parallel.isRoot())  cout << "\033[1;32m The background quantitie are being provided by hiclass (H, w, c_s^2, c_a^2)! \033[0m"<< endl;
+      }
+    else
+    {
+      if(parallel.isRoot())  cout << " \033[1;31m ERROR: The code is compiled with HAVE_HICLASS_BG while background hiclass is set to 0 in the settings!  \033[0m"<< endl;
+      parallel.abortForce();
+    }
+  #endif
+
+  #if !defined(HAVE_HICLASS_BG)
+
+  if (parseParameter(params, numparam, "w_a_kessence",  cosmo.w_a_kessence))
+  {
+    if(parallel.isRoot())  cout << " \033[1;31m ERROR: You requested w_a (time variation of w) which is not implemented properly! You need to use hiclass tools with background option for it.  \033[0m"<< endl;
+    parallel.abortForce();
+  }
+
+  if (sim.bg_hiclass==1)
+  {
+    if(parallel.isRoot())  cout << " \033[1;31m ERROR: The background params are requested while the code is not compiled with hiclass properly! You might need to add DGEVOLUTION  += -DHAVE_HICLASS or DHAVE_HICLASS_BG \033[0m"<< endl;
+    parallel.abortForce();
+  }
+  #endif
+
   //kessence end
 
 	cosmo.num_ncdm = MAX_PCL_SPECIES-2;
@@ -1833,9 +2056,40 @@ if (ic.IC_kess == 1)
 	else
 	{
 		//Kessence part added
+    #ifdef HAVE_HICLASS_BG
+    if (cosmo.gravity_model == 0)
+    {
+      cosmo.Omega_kessence  = 1. - cosmo.Omega_m - cosmo.Omega_Lambda - cosmo.Omega_rad;
+    }
+    else
+    {
+      cosmo.Omega_Lambda = 0.;
+    }
+    #else
+		cosmo.Omega_kessence  = 1. - cosmo.Omega_m - cosmo.Omega_Lambda - cosmo.Omega_rad;
+    #endif
+
+  // WARNING:
+  if (cosmo.Omega_Lambda != 0)
+  {
+    COUT << COLORTEXT_YELLOW << " /!\\ warning" << COLORTEXT_RESET << ": You have requested mixed dark energy scenario which is not tested well! Before using this implementaion you need to perfomr some tests!" << endl;
+  }
+    #ifdef HAVE_HICLASS_BG
+  if (cosmo.gravity_model == 0)
+  {
     COUT << "Kessence source gravity = " << sim.Kess_source_gravity<< ", Non-linear kessence = " << sim.NL_kessence<< ", Number of kessence update = " <<sim.nKe_numsteps <<endl;
-		COUT << " cosmological parameters are: Omega_m0 = " << cosmo.Omega_m << ", Omega_rad0 = " << cosmo.Omega_rad << ", h = " << cosmo.h << ", Omega_kessence0= "<<cosmo.Omega_kessence<<", w_kessence= "<<cosmo.w_kessence<<", cs^2 (kessence)= "<<cosmo.cs2_kessence<<endl;
-		cosmo.Omega_Lambda = 1. - cosmo.Omega_m - cosmo.Omega_kessence - cosmo.Omega_rad;
+    COUT << " cosmological parameters are: Omega_m0 = " << cosmo.Omega_m << ", Omega_rad0 = " << cosmo.Omega_rad<< ", Omega_g0 = " << cosmo.Omega_g<< ", Omega_ur0 = " << cosmo.Omega_ur << ", h = " << cosmo.h << ", Omega_kessence0 (set from closed relation)= "<<cosmo.Omega_kessence<<", w0_kessence= "<<cosmo.w_kessence<<", wa_kessence= "<<cosmo.w_a_kessence<<", cs^2 (kessence)= "<<cosmo.cs2_kessence<<", alpha_k (hiclass)= "<<3.0 * (1.0 + cosmo.w_kessence)/cosmo.cs2_kessence<< ", Omega_Lambda= "<<cosmo.Omega_Lambda<<" "<<endl;
+  }
+  else if (cosmo.gravity_model == 1)
+  {
+    COUT<<COLORTEXT_CYAN<<"modified gravity model:"<<" k_essence_power, "<< "kessence source gravity = " << sim.Kess_source_gravity<< ", Non-linear kessence = " << sim.NL_kessence<< ", Number of kessence update = " <<sim.nKe_numsteps <<endl;
+    COUT << " cosmological parameters are: Omega_m0 = " << cosmo.Omega_m << ", Omega_rad0 = " << cosmo.Omega_rad<< ", Omega_g0 = " << cosmo.Omega_g<< ", Omega_ur0 = " << cosmo.Omega_ur << ", h = " << cosmo.h << ", Xt= "<<cosmo.Xt<<", g0= "<<cosmo.g0<<", g2= "<<cosmo.g2<<", g4= "<<cosmo.g4<<", phi_i= "<<cosmo.phi_i<<", X_i= "<<cosmo.X_i<< ", Omega_Lambda= "<<cosmo.Omega_Lambda<<" "<<COLORTEXT_RESET<<endl;
+  }
+  #else
+  COUT << "Kessence source gravity = " << sim.Kess_source_gravity<< ", Non-linear kessence = " << sim.NL_kessence<< ", Number of kessence update = " <<sim.nKe_numsteps <<endl;
+  COUT << " cosmological parameters are: Omega_m0 = " << cosmo.Omega_m << ", Omega_rad0 = " << cosmo.Omega_rad<< ", Omega_g0 = " << cosmo.Omega_g<< ", Omega_ur0 = " << cosmo.Omega_ur << ", h = " << cosmo.h << ", Omega_kessence0 (set from closed relation)= "<<cosmo.Omega_kessence<<", w0_kessence= "<<cosmo.w_kessence<<", wa_kessence= "<<cosmo.w_a_kessence<<", cs^2 (kessence)= "<<cosmo.cs2_kessence<<", alpha_k (hiclass)= "<<3.0 * (1.0 + cosmo.w_kessence)/cosmo.cs2_kessence<< ", Omega_Lambda= "<<cosmo.Omega_Lambda<<" "<<endl;
+  #endif
+
 	}
 
 	if(!parseParameter(params, numparam, "switch delta_rad", sim.z_switch_deltarad))

@@ -1,10 +1,9 @@
-# $k$-evolution
+# k-evolution
 
-$k$-evolution (arXiv:1910.01104) is basen on gevolution N-body code (Adamek J., Daverio D., Durrer R., and Kunz M., Nature Phys. 12, 346 (2016), arXiv: 1604.06065).
+k-evolution (arXiv:1910.01104) is based on gevolution N-body code (Adamek J., Daverio D., Durrer R., and Kunz M., Nature Phys. 12, 346 (2016), arXiv: 1604.06065).
 
-$k$-essene in the effective field theory of dark energy framework is added into the gevolution code.
-
-The free parameters to be chosen are $w$ (the equation of state for dark energy) and $c_s^2$ (the speed of sound squared). 
+k-essene based the EFT framework is added into the gevolution
+The free parameters to be chosen are w (the equation of state for dark energy) and c_s^2 (the speed of sound squared). 
 
 
 ## Compilation and usage
@@ -31,11 +30,11 @@ For further about gevolution information, please refer to the User Manual (manua
 
 ## Credits
 
-If you use $k$-evolution for scientific purposes, we kindly ask you to cite
-*Farbod Hassani, Julian Adamek, Martin Kunz, Filippo Vernizzi, JCAP12(2019)011*
+If you use gevolution for scientific work, we kindly ask you to cite
+*Adamek J., Daverio D., Durrer R., and Kunz M., Nature Phys. 12, 346 (2016)*
 in your publications.
 
 For bug reports and other important feedback you can contact the authors,
-farbod.hassani@gmail.com (for queries related to $k$-evolution) and to Julian Adamek (gevolution related queries)
-developers@latfield.org (for queries related to the LATfield2 library).
+julian.adamek@qmul.ac.uk (for queries related to gevolution)
+developers@latfield.org (for queries related to the LATfield2 library)
 

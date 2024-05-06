@@ -3,10 +3,10 @@
 //////////////////////////
 //
 // Auxiliary functions for hibernation
-//
+// Author (k-evolution): Farbod Hassani (Université de Genève & Universitetet i Oslo)
 // Author: Julian Adamek (Université de Genève & Observatoire de Paris & Queen Mary University of London)
 //
-// Last modified: February 2019
+// Last modified: February 2020 by FH
 //
 //////////////////////////
 
@@ -133,9 +133,14 @@ void writeRestartSettings(metadata & sim, icsettings & ic, cosmology & cosmo, co
 		// }
 		fprintf(outfile, "N_ncdm    = %d\n", cosmo.num_ncdm);
 		//Kessence
-		fprintf(outfile, "Omega_kessence   = %.15le\n", cosmo.w_kessence);
+    #ifndef HAVE_HICLASS_BG
+		fprintf(outfile, "Omega_kessence   = %.15le\n", cosmo.Omega_kessence);
 		fprintf(outfile, "w_kessence   = %.15le\n", cosmo.Omega_b);
 		fprintf(outfile, "cs2_kessence   = %.15le\n", cosmo.cs2_kessence);
+    #else
+    if(parallel.isRoot())  cout << " \033[1;31m ERROR: You shouldn't use hibernation option for this version of k-evolution! It needs to be implemented carefully! \033[0m"<< endl;
+    parallel.abortForce();
+    #endif
 
 		if (cosmo.num_ncdm > 0)
 		{
@@ -211,10 +216,10 @@ void writeRestartSettings(metadata & sim, icsettings & ic, cosmology & cosmo, co
 			if(sim.out_snapshot & MASK_PI_K)
 			{
 				fprintf(outfile, "pi_k");
-				if (sim.out_snapshot > MASK_zeta)
+				if (sim.out_snapshot > MASK_ZETA)
 					fprintf(outfile, ", ");
 			}
-			if(sim.out_snapshot & MASK_zeta)
+			if(sim.out_snapshot & MASK_ZETA)
 			{
 				fprintf(outfile, "zeta_k");
 				if (sim.out_snapshot > MASK_CHI)
@@ -332,10 +337,10 @@ void writeRestartSettings(metadata & sim, icsettings & ic, cosmology & cosmo, co
 			if(sim.out_snapshot & MASK_PI_K)
 			{
 				fprintf(outfile, "pi_k");
-				if (sim.out_snapshot > MASK_zeta)
+				if (sim.out_snapshot > MASK_ZETA)
 					fprintf(outfile, ", ");
 			}
-			if(sim.out_snapshot & MASK_zeta)
+			if(sim.out_snapshot & MASK_ZETA)
 			{
 				fprintf(outfile, "zeta");
 				if (sim.out_snapshot > MASK_CHI)

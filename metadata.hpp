@@ -4,9 +4,10 @@
 //
 // Constants and metadata structures
 //
-// Author: Julian Adamek (Université de Genève & Observatoire de Paris & Queen Mary University of London)
+// Author (k-evolution): Farbod Hassani (Université de Genève & Universitetet i Oslo)
+// Author (gevolution): Julian Adamek (Université de Genève & Observatoire de Paris & Queen Mary University of London)
 //
-// Last modified: April 2019
+// Last modified: April 2021 by FH
 //
 //////////////////////////
 
@@ -16,7 +17,7 @@
 #define GEVOLUTION_VERSION 1.2
 
 #ifndef MAX_OUTPUTS
-#define MAX_OUTPUTS 32
+#define MAX_OUTPUTS 128
 #endif
 
 #ifndef PARAM_MAX_LENGTH
@@ -64,11 +65,11 @@
 #define MASK_DELTA  4096
 #define MASK_DBARE  8192
 #define MASK_PI_K    16384
-#define MASK_zeta    32768
+#define MASK_ZETA    32768
 #define MASK_MULTI  65536
 #define MASK_VEL    131072
 #define MASK_T_KESS 262144
-#define MASK_Delta_KESS 524288
+#define MASK_DELTA_KESS 524288
 #define MASK_PHI_PRIME 1048576
 #define MASK_DELTAKESS_DELTA 2097152
 
@@ -137,7 +138,9 @@
 #define COLORTEXT_GREEN     "\033[32;1m"
 #define COLORTEXT_RED       "\033[31;1m"
 #define COLORTEXT_YELLOW    "\033[33;1m"
+#define COLORTEXT_BLUE     "\033[1;34m"
 #define COLORTEXT_RESET     "\033[0m"
+#define COLORTEXT_BLUE     "\033[1;34m"
 #else
 #define COLORTEXT_WHITE     '\0'
 #define COLORTEXT_CYAN      '\0'
@@ -253,6 +256,7 @@ struct metadata
 	int nKe_numsteps;
 	int Kess_source_gravity;
   int NL_kessence;
+  int bg_hiclass;// Using hiclass to evaluate time dependence of quantities!
 	//kessence end
 };
 
@@ -289,10 +293,28 @@ struct cosmology
 	double Omega_b;
 	double Omega_m;
 	double Omega_Lambda;
+  // #ifdef HAVE_HICLASS_BG
 	// Kessence part
+  double gravity_model; //0 is the propto_omega and 1 is k_essence_power
 	double Omega_kessence;
   double w_kessence;
+  double w_a_kessence;
 	double cs2_kessence;
+  // k_essence_power # Xt, g0, g2, g4, phi_i, X_i
+  // parameters_smg =  8., 0.0, 1.0, 1.e-1, 1., 1.e20
+  double Xt;
+  double g0;
+  double g2;
+  double g4;
+  double phi_i;
+  double X_i;
+  // #else
+  // double Omega_kessence;
+  // double w_kessence;
+  // double cs2_kessence;
+  // #endif
+
+  int params_time_depend;
   // fld CLASS
   // double Omega_fld=0.0;
 	// double w0_fld=0.0;

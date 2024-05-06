@@ -1,10 +1,9 @@
 # programming environment
-COMPILER     := /usr/local/bin/mpic++
-INCLUDE      := -I/Users/farbod/Documents/GitHub/EQ_hi_class/include -I/usr/local/Cellar/fftw/3.3.9/include -I/usr/local/Cellar/gsl/2.6/include -I/usr/local/Cellar/hdf5/1.12.0_1/include -I./../LATfield2 # add the path to LATfield2 and other libraries (if necessary)
-LIB          := -L/Users/farbod/Documents/GitHub/EQ_hi_class -L/usr/local/Cellar/hdf5/1.12.0_1/lib -L/usr/local/Cellar/gsl/2.6/lib  -L/usr/local/Cellar/fftw/3.3.9/lib -lfftw3 -lm -lhdf5 -lgsl -lgslcblas #-lclass
-
+COMPILER     := mpic++
+INCLUDE      := 
+LIB          :=  -lfftw3 -lm -lhdf5 -lgsl -lgslcblas -lclass  
 # target and source
-EXEC         := gevolution
+EXEC         := kevolution
 SOURCE       := main.cpp
 HEADERS      := $(wildcard *.hpp)
 
@@ -19,13 +18,17 @@ DLATFIELD2   := -DFFT3D -DHDF5
 # optional compiler settings (gevolution)
 DGEVOLUTION  := -DPHINONLINEAR
 DGEVOLUTION  += -DBENCHMARK
-DGEVOLUTION  += -DBACKREACTION_TEST
+#DGEVOLUTION  += -NONLINEAR_TEST # for the non-linear instability tests
 DGEVOLUTION  += -DEXACT_OUTPUT_REDSHIFTS
 #DGEVOLUTION  += -DVELOCITY      # enables velocity field utilities
-#DGEVOLUTION  += -DCOLORTERMINAL
+DGEVOLUTION  += -DCOLORTERMINAL
 #DGEVOLUTION  += -DCHECK_B
-#DGEVOLUTION  += -DHAVE_CLASS    # requires LIB -lclass
+DGEVOLUTION  += -DHAVE_HICLASS    # -DHAVE_HICLASS  or -DHAVE_CLASS requires LIB -lclass. The initial conditions are provided by hiclass!
+DGEVOLUTION  += -DHAVE_HICLASS_BG    # -DHAVE_HICLASS requires LIB -lclass. The BG quantities are provided by hiclass and also parameters like c_s^2,w ...
 #DGEVOLUTION  += -DHAVE_HEALPIX  # requires LIB -lchealpix
+
+CDBG +=
+CFLAGS += $(CDBG)
 
 # further compiler options
 OPT          := -O3 -std=c++11

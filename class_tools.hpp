@@ -4,16 +4,16 @@
 //
 // interface to linear Boltzmann code CLASS
 //
-// Author: Julian Adamek (Université de Genève & Observatoire de Paris & Queen Mary University of London)
-//
-// Last modified: April 2019
+// Author (k-evolution): Farbod Hassani (Université de Genève & Universitetet i Oslo)
+// Author (gevolution): Julian Adamek (Université de Genève & Observatoire de Paris & Queen Mary University of London)
+// Last modified: April 2021 by FH
 //
 //////////////////////////
 
 #ifndef CLASS_TOOLS_HEADER
 #define CLASS_TOOLS_HEADER
 
-#ifdef HAVE_CLASS
+#if defined(HAVE_CLASS)
 
 #include <gsl/gsl_spline.h>
 #include "parser.hpp"
@@ -42,15 +42,15 @@ using namespace LATfield2;
 //
 //////////////////////////
 
-void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosmo, background & class_background, perturbs & class_perturbs, spectra & class_spectra, parameter * params = NULL, int numparam = 0, const char * output_value = "dTk, vTk")
+void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosmo, background & class_background,  thermo & class_thermo, perturbs & class_perturbs, parameter * params = NULL, int numparam = 0, const char * output_value = "dTk, vTk")
 {
-	precision class_precision;
-	thermo class_thermo;
+  precision class_precision;
 	transfers class_transfers;
-  	primordial class_primordial;
+  primordial class_primordial;
 	nonlinear class_nonlinear;
-  	lensing class_lensing;
-  	output class_output;
+  spectra class_spectra;
+  lensing class_lensing;
+  output class_output;
 	file_content class_filecontent;
 	ErrorMsg class_errmsg;
 	char filename[] = "initializeCLASSstructures";
@@ -59,7 +59,7 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 	double perturb_sampling_stepsize;
 	int recfast_Nz0;
 	int i;
-	int num_entries = 20;
+	int num_entries = 23;
 #ifdef CLASS_K_PER_DECADE_FOR_PK
 	int k_per_decade_for_pk;
 	if (numparam == 0 || !parseParameter(params, numparam, "k_per_decade_for_pk", k_per_decade_for_pk))
@@ -100,7 +100,7 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 	i = 0;
 
   sprintf(class_filecontent.name[i], "use_ppf");
-	sprintf(class_filecontent.value[i++], "%e", "no");
+	sprintf(class_filecontent.value[i++], "no");
 
 	sprintf(class_filecontent.name[i], "root");
 	sprintf(class_filecontent.value[i++], "%s%s_class", sim.output_path, sim.basename_generic);
@@ -152,6 +152,18 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 
 	sprintf(class_filecontent.name[i], "w0_fld");
 	sprintf(class_filecontent.value[i++], "%g", cosmo.w_kessence);
+
+  sprintf(class_filecontent.name[i], "write parameters");
+	sprintf(class_filecontent.value[i++], "yeap");
+
+  sprintf(class_filecontent.name[i], "write background");
+  sprintf(class_filecontent.value[i++], "yes");
+
+  sprintf(class_filecontent.name[i], "format");
+  sprintf(class_filecontent.value[i++], "class");
+
+  sprintf(class_filecontent.name[i], "headers");
+  sprintf(class_filecontent.value[i++], "yes");
 
 	// sprintf(class_filecontent.name[i], "wa_fld");
 	// sprintf(class_filecontent.value[i++], "%g", cosmo.wa_fld);
@@ -205,6 +217,9 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 		sprintf(class_filecontent.value[i++], "1");
 
 		sprintf(class_filecontent.name[i], "nonlinear_verbose");
+		sprintf(class_filecontent.value[i++], "1");
+
+    sprintf(class_filecontent.name[i], "output_verbose");
 		sprintf(class_filecontent.value[i++], "1");
 	}
 
@@ -323,12 +338,6 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 		parallel.abortForce();
 	}
 
-	if (thermodynamics_free(&class_thermo) == _FAILURE_)
-	{
-		COUT << " error: calling thermodynamics_free from CLASS library failed!" << endl << " following error message was passed: " << class_thermo.error_message << endl;
-		parallel.abortForce();
-	}
-
 	COUT << endl << " CLASS structures initialized successfully." << endl;
 }
 
@@ -341,24 +350,24 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 //
 // Arguments:
 //   class_background  CLASS structure that contains the background
+//   class_thremo      CLASS structure that contains thermodynamics
 //   class_perturbs    CLASS structure that contains perturbations
-//   class_spectra     CLASS structure that contains spectra
 //
 // Returns:
 //
 //////////////////////////
 
-void freeCLASSstructures(background & class_background, perturbs & class_perturbs, spectra & class_spectra)
+void freeCLASSstructures(background & class_background, thermo & class_thermo, perturbs & class_perturbs)
 {
-	if (spectra_free(&class_spectra) == _FAILURE_)
-	{
-		COUT << " error: calling spectra_free from CLASS library failed!" << endl << " following error message was passed: " << class_spectra.error_message << endl;
-		parallel.abortForce();
-	}
-
 	if (perturb_free(&class_perturbs) == _FAILURE_)
 	{
 		COUT << " error: calling perturb_free from CLASS library failed!" << endl << " following error message was passed: " << class_perturbs.error_message << endl;
+		parallel.abortForce();
+	}
+
+	if (thermodynamics_free(&class_thermo) == _FAILURE_)
+	{
+		COUT << " error: calling thermodynamics_free from CLASS library failed!" << endl << " following error message was passed: " << class_thermo.error_message << endl;
 		parallel.abortForce();
 	}
 
@@ -367,6 +376,7 @@ void freeCLASSstructures(background & class_background, perturbs & class_perturb
 		COUT << " error: calling background_free from CLASS library failed!" << endl << " following error message was passed: " << class_background.error_message << endl;
 		parallel.abortForce();
 	}
+
 }
 
 
@@ -394,7 +404,7 @@ void freeCLASSstructures(background & class_background, perturbs & class_perturb
 //
 //////////////////////////
 
-void loadTransferFunctions(background & class_background, perturbs & class_perturbs, spectra & class_spectra, gsl_spline * & tk_delta, gsl_spline * & tk_theta, const char * qname, const double boxsize, const double z, double h)
+void loadTransferFunctions(background & class_background, perturbs & class_perturbs, gsl_spline * & tk_delta, gsl_spline * & tk_theta, const char * qname, const double boxsize, const double z, double h)
 {
 	int cols = 0, dcol = -1, tcol = -1, kcol = -1;
 	double * k;
@@ -407,13 +417,13 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 	char kname[8];
 	char * ptr;
 
-	spectra_output_tk_titles(&class_background, &class_perturbs, class_format, coltitles);
+  perturb_output_titles(&class_background, &class_perturbs, class_format, coltitles);
 	if (qname != NULL)
 	{
 		sprintf(dname, "d_%s", qname);
 		sprintf(tname, "t_%s", qname);
 		h /= boxsize;
-    }
+  }
 	else
 	{
 		sprintf(dname, "phi");
@@ -425,12 +435,12 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 	ptr = strtok(coltitles, _DELIMITER_);
 	while (ptr != NULL)
 	{
-    	if (strncmp(ptr, dname, strlen(dname)) == 0) dcol = cols;
+    if (strncmp(ptr, dname, strlen(dname)) == 0) dcol = cols;
 		else if (strncmp(ptr, tname, strlen(tname)) == 0) tcol = cols;
 		else if (strncmp(ptr, kname, strlen(kname)) == 0) kcol = cols;
 		cols++;
-    	ptr = strtok(NULL, _DELIMITER_);
-  	}
+    ptr = strtok(NULL, _DELIMITER_);
+  }
 
 	if (dcol < 0 || tcol < 0 || kcol < 0)
 	{
@@ -438,18 +448,20 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 		parallel.abortForce();
 	}
 
-	data = (double *) malloc(sizeof(double) * cols * class_spectra.ln_k_size);
-	k = (double *) malloc(sizeof(double) * class_spectra.ln_k_size);
-	tk_d = (double *) malloc(sizeof(double) * class_spectra.ln_k_size);
-	tk_t = (double *) malloc(sizeof(double) * class_spectra.ln_k_size);
+  data = (double *) malloc(sizeof(double) * cols*class_perturbs.k_size[class_perturbs.index_md_scalars]);
+  k = (double *) malloc(sizeof(double) * class_perturbs.k_size[class_perturbs.index_md_scalars]);
+  tk_d = (double *) malloc(sizeof(double) * class_perturbs.k_size[class_perturbs.index_md_scalars]);
+  tk_t = (double *) malloc(sizeof(double) * class_perturbs.k_size[class_perturbs.index_md_scalars]);
+	// tk_t = (double *) malloc(sizeof(double) * class_spectra.ln_k_size);
 
-	spectra_output_tk_data(&class_background, &class_perturbs, &class_spectra, class_format, z, cols, data);
+  perturb_output_data(&class_background, &class_perturbs, class_format, z, cols, data);
 
-	for (int i = 0; i < class_spectra.ln_k_size; i++)
-	{
+	for (int i = 0; i < class_perturbs.k_size[class_perturbs.index_md_scalars]; i++)
+  {
 		k[i] = data[i*cols + kcol] * boxsize;
 		tk_d[i] = data[i*cols + dcol];
-		tk_t[i] = data[i*cols + tcol] / h;
+    tk_t[i] = data[i*cols + tcol] / h;
+
 		if (i > 0)
 		{
 			if (k[i] < k[i-1])
@@ -462,11 +474,11 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 
 	free(data);
 
-	tk_delta = gsl_spline_alloc(gsl_interp_cspline, class_spectra.ln_k_size);
-	tk_theta = gsl_spline_alloc(gsl_interp_cspline, class_spectra.ln_k_size);
+  tk_delta = gsl_spline_alloc(gsl_interp_cspline, class_perturbs.k_size[class_perturbs.index_md_scalars]);
+	tk_theta = gsl_spline_alloc(gsl_interp_cspline, class_perturbs.k_size[class_perturbs.index_md_scalars]);
 
-	gsl_spline_init(tk_delta, k, tk_d, class_spectra.ln_k_size);
-	gsl_spline_init(tk_theta, k, tk_t, class_spectra.ln_k_size);
+	gsl_spline_init(tk_delta, k, tk_d, class_perturbs.k_size[class_perturbs.index_md_scalars]);
+	gsl_spline_init(tk_theta, k, tk_t, class_perturbs.k_size[class_perturbs.index_md_scalars]);
 
 	free(k);
 	free(tk_d);
